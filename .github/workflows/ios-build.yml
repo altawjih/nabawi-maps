@@ -22,16 +22,10 @@ jobs:
         run: flutter pub get
 
       - name: Install Apple Certificate
-        env:
-          P12_BASE64: ${{ secrets.DISTRIBUTION_P12_BASE64 }}
-          P12_PASSWORD: ${{ secrets.DISTRIBUTION_P12_PASSWORD }}
-        run: |
-          echo "$P12_BASE64" | tr -d '\n\r ' | base64 -d > distribution.p12
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security import distribution.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.DISTRIBUTION_P12_BASE64 }}
+          p12-password: ${{ secrets.DISTRIBUTION_P12_PASSWORD }}
 
       - name: Install Provisioning Profile
         env:
