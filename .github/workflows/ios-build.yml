@@ -40,10 +40,14 @@ jobs:
 
       - name: Sign and Create IPA
         run: |
-          cd build/ios/iphoneos
-          mkdir Payload
-          cp -r Runner.app Payload/Runner.app
-          /usr/bin/codesign --force --sign "Apple Distribution: Dakhel Alotaibi (9FQNP4F4PN)" Payload/Runner.app
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          # Embed provisioning profile
+          cp profile.mobileprovision "$APP_PATH/embedded.mobileprovision"
+          # Sign the app
+          /usr/bin/codesign --force --sign "Apple Distribution: Dakhel Alotaibi (9FQNP4F4PN)" "$APP_PATH"
+          # Create IPA
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/Runner.app
           zip -r NabawiMaps.ipa Payload
 
       - name: Upload to App Store Connect
@@ -53,7 +57,7 @@ jobs:
         run: |
           xcrun altool --upload-app \
             --type ios \
-            --file build/ios/iphoneos/NabawiMaps.ipa \
+            --file NabawiMaps.ipa \
             --username "$APPLE_ID" \
             --password "$APPLE_ID_PASSWORD"
 
@@ -61,5 +65,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: NabawiMaps-iOS-Signed
-          path: build/ios/iphoneos/NabawiMaps.ipa
+          path: NabawiMaps.ipa
           retention-days: 30
