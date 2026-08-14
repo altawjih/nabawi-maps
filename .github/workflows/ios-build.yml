@@ -45,10 +45,12 @@ jobs:
           
           cp profile.mobileprovision "$APP_PATH/embedded.mobileprovision"
           
+          security cms -D -i profile.mobileprovision > decoded_profile.plist
+          /usr/libexec/PlistBuddy -c "Print :Entitlements" decoded_profile.plist -x > entitlements.plist
+          
           find "$APP_PATH" -name "*.dylib" | xargs -I {} /usr/bin/codesign --force --sign "$IDENTITY" {}
           find "$APP_PATH/Frameworks" -maxdepth 1 -name "*.framework" | xargs -I {} /usr/bin/codesign --force --sign "$IDENTITY" {}
-          
-          /usr/bin/codesign --force --sign "$IDENTITY" "$APP_PATH"
+          /usr/bin/codesign --force --sign "$IDENTITY" --entitlements entitlements.plist "$APP_PATH"
           
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/Runner.app
