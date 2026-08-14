@@ -41,11 +41,15 @@ jobs:
       - name: Sign and Create IPA
         run: |
           APP_PATH="build/ios/iphoneos/Runner.app"
-          # Embed provisioning profile
+          IDENTITY="Apple Distribution: Dakhel Alotaibi (9FQNP4F4PN)"
+          
           cp profile.mobileprovision "$APP_PATH/embedded.mobileprovision"
-          # Sign the app
-          /usr/bin/codesign --force --sign "Apple Distribution: Dakhel Alotaibi (9FQNP4F4PN)" "$APP_PATH"
-          # Create IPA
+          
+          find "$APP_PATH" -name "*.dylib" | xargs -I {} /usr/bin/codesign --force --sign "$IDENTITY" {}
+          find "$APP_PATH/Frameworks" -maxdepth 1 -name "*.framework" | xargs -I {} /usr/bin/codesign --force --sign "$IDENTITY" {}
+          
+          /usr/bin/codesign --force --sign "$IDENTITY" "$APP_PATH"
+          
           mkdir -p Payload
           cp -r "$APP_PATH" Payload/Runner.app
           zip -r NabawiMaps.ipa Payload
