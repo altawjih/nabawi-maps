@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -1091,7 +1091,7 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
   //  OPEN MAPS / COPY
   // ════════════════════════════════════════
 
-  Future<void> openMaps(String url) async {
+  Future<void> openMaps(String url, {LatLng? location}) async {
     if (Platform.isIOS) {
       await showDialog(
         context: context,
@@ -1101,15 +1101,9 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
             TextButton(
               onPressed: () async {
                 Navigator.pop(ctx);
-                final appleUrl = url
-                    .replaceAll(
-                      'https://maps.google.com',
-                      'https://maps.apple.com',
-                    )
-                    .replaceAll(
-                      'http://maps.google.com',
-                      'https://maps.apple.com',
-                    );
+                                  final appleUrl = location != null
+                    ? 'https://maps.apple.com/?q=${location.latitude},${location.longitude}'
+                    : url;
                 await launchUrl(
                   Uri.parse(appleUrl),
                   mode: LaunchMode.externalApplication,
@@ -1267,7 +1261,7 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
                   const SizedBox(height: 8),
                   if (place.mapsUrl != null)
                     FilledButton.icon(
-                      onPressed: () => openMaps(place.mapsUrl!),
+                      onPressed: () => openMaps(place.mapsUrl!, location: place.location),
                       icon: const Icon(Icons.navigation),
                       label: Text(
                         _t(
