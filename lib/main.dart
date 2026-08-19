@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
 import 'package:xml/xml.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
@@ -1091,21 +1091,61 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
   // ════════════════════════════════════════
 
   Future<void> openMaps(String url) async {
-    final uri = Uri.parse(url);
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _t(
-              'تعذر فتح الرابط',
-              'Could not open link',
-              'Bağlantı açılamadı',
-              'Tautan tidak dapat dibuka',
+    if (Platform.isIOS) {
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(_t('افتح بـ', 'Open with', 'Aç', 'Buka dengan')),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final appleUrl = url
+                    .replaceAll(
+                      'https://maps.google.com',
+                      'https://maps.apple.com',
+                    )
+                    .replaceAll(
+                      'http://maps.google.com',
+                      'https://maps.apple.com',
+                    );
+                await launchUrl(
+                  Uri.parse(appleUrl),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+              child: const Text('Apple Maps'),
             ),
-          ),
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+              child: const Text('Google Maps'),
+            ),
+          ],
         ),
       );
+    } else {
+      final uri = Uri.parse(url);
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _t(
+                'تعذر فتح الرابط',
+                'Could not open link',
+                'Bağlantı açılamadı',
+                'Tautan tidak dapat dibuka',
+              ),
+            ),
+          ),
+        );
+      }
     }
   }
 
