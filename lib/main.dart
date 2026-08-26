@@ -1102,7 +1102,7 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
               onPressed: () async {
                 Navigator.pop(ctx);
                                   final appleUrl = location != null
-                    ? 'https://maps.apple.com/?q=${location.latitude},${location.longitude}'
+                    ? 'maps://?q=${location.latitude},${location.longitude}'
                     : url;
                 await launchUrl(
                   Uri.parse(appleUrl),
