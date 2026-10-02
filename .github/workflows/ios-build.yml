@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,15 +57,12 @@ jobs:
           zip -r NabawiMaps.ipa Payload
 
       - name: Upload to App Store Connect
-        env:
-          APPLE_ID: abnbjad0@gmail.com
-          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
-        run: |
-          xcrun altool --upload-app \
-            --type ios \
-            --file NabawiMaps.ipa \
-            --username "$APPLE_ID" \
-            --password "$APPLE_ID_PASSWORD"
+        uses: apple-actions/upload-testflight-build@v3
+        with:
+          app-path: NabawiMaps.ipa
+          issuer-id: ${{ secrets.APPLE_API_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPLE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
