@@ -1272,44 +1272,6 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
                         ),
                       ),
                     ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => copyText(
-                      place.mapsUrl ?? coordinates,
-                      'تم نسخ الرابط',
-                      'Link copied',
-                      'Bağlantı kopyalandı',
-                      'Tautan disalin',
-                    ),
-                    icon: const Icon(Icons.copy),
-                    label: Text(
-                      _t(
-                        'نسخ الرابط',
-                        'Copy Link',
-                        'Bağlantıyı Kopyala',
-                        'Salin Tautan',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () => copyText(
-                      coordinates,
-                      'تم نسخ الإحداثيات',
-                      'Coordinates copied',
-                      'Koordinatlar kopyalandı',
-                      'Koordinat disalin',
-                    ),
-                    icon: const Icon(Icons.my_location),
-                    label: Text(
-                      _t(
-                        'نسخ الإحداثيات',
-                        'Copy Coordinates',
-                        'Koordinatları Kopyala',
-                        'Salin Koordinat',
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
