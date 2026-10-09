@@ -110,6 +110,7 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
     'حصون': {'en': 'Forts', 'tr': 'Kaleler', 'id': 'Benteng'},
     'أسواق': {'en': 'Markets', 'tr': 'Çarşılar', 'id': 'Pasar'},
     'قصور': {'en': 'Palaces', 'tr': 'Saraylar', 'id': 'Istana'},
+    'مسار الهجرة': {'en': 'Hijra Route', 'tr': 'Hicret Güzergahı', 'id': 'Rute Hijrah'},
     'أخرى': {'en': 'Other', 'tr': 'Diğer', 'id': 'Lainnya'},
   };
 
@@ -490,8 +491,24 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
     'غزوة أحد': 'معارك',
     'غزوة بدر': 'معارك',
     'غزوة الخندق': 'معارك',
+    'غزوة تبوك': 'معارك',
+    'غزوة الطائف': 'معارك',
+    'غزوة حنين': 'معارك',
+    'غزوة خيبر': 'معارك',
+    'غزوة الأبواء': 'معارك',
     'قصر عروة بن الزبير': 'قصور',
     'سوق المناخة': 'أسواق',
+    'مسجد السقيا': 'مساجد',
+    'مسجد بني حرام': 'مساجد',
+    'مسجد البيعة (العقبة)': 'مساجد',
+    'مسجد الحديبية': 'مساجد',
+    'مسجد الجعرانة': 'مساجد',
+    'بئر سلمان الفارسي رضي الله عنه': 'آبار',
+    'بئر خاتم النبي ﷺ (أريس)': 'آبار',
+    'بئر طوى': 'آبار',
+    'بئر الروحاء': 'آبار',
+    'بئر أهاب': 'آبار',
+    'حصن كعب الأشراف': 'حصون وآطام',
     'سقيفة بني ساعدة': 'أخرى',
     'ثنية الوداع': 'أخرى',
     'ذات الجيش': 'أخرى',
@@ -507,6 +524,13 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
     'مقبرة شهداء بدر': 'أخرى',
     'وادي العقيق المبارك': 'أخرى',
     'وادي قناة': 'أخرى',
+    'غار حراء': 'أخرى',
+    'بادية بني سعد': 'أخرى',
+    'شعب بني هاشم مولد النبي صلى الله عليه وسلم': 'أخرى',
+    'شهداء غزوة الطائف': 'أخرى',
+    'غار ثور': 'أخرى',
+    'بَحْرَة الرُّغاء': 'أخرى',
+    'غدير خم': 'أخرى',
   };
 
   String _normalize(String s) => s.trim().replaceAll(RegExp(r'[ً-ٰٟ]'), '');
@@ -1000,6 +1024,8 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
     for (final c in categoryPlaces.keys) {
       if (!orderedCategories.contains(c)) orderedCategories.add(c);
     }
+    // Add special "coming soon" category at the end
+    orderedCategories.add('مسار الهجرة');
 
     showModalBottomSheet(
       context: context,
@@ -1322,13 +1348,18 @@ class _CategoryMenuSheetState extends State<_CategoryMenuSheet> {
                     final isExpanded = _expandedCategory == category;
                     final label = widget.getCategoryLabel(category);
 
+                    // Special "coming soon" category
+                    final isComingSoon = category == 'مسار الهجرة';
+
                     return Column(
                       children: [
                         InkWell(
                           onTap: () {
-                            setState(() {
-                              _expandedCategory = isExpanded ? null : category;
-                            });
+                            if (isComingSoon) {
+                              setState(() { _expandedCategory = isExpanded ? null : category; });
+                            } else {
+                              setState(() { _expandedCategory = isExpanded ? null : category; });
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
@@ -1371,7 +1402,25 @@ class _CategoryMenuSheetState extends State<_CategoryMenuSheet> {
                             ),
                           ),
                         ),
-                        if (isExpanded)
+                        if (isExpanded && isComingSoon)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 52, vertical: 16),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF8FCF9),
+                              border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE))),
+                            ),
+                            child: Text(
+                              widget.currentLang == 'ar' ? 'قريباً' :
+                              widget.currentLang == 'tr' ? 'Yakında' :
+                              widget.currentLang == 'id' ? 'Segera' : 'Coming Soon',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF0B5D3B),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        if (isExpanded && !isComingSoon)
                           ...places.map((name) {
                             final place = widget.allPlaces.firstWhere(
                               (p) => p.name == name,
@@ -1446,6 +1495,7 @@ class _CategoryMenuSheetState extends State<_CategoryMenuSheet> {
       case 'معارك': return Icons.shield;
       case 'قصور': return Icons.castle;
       case 'أسواق': return Icons.storefront;
+      case 'مسار الهجرة': return Icons.route;
       default: return Icons.place;
     }
   }
