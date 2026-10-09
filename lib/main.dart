@@ -1376,6 +1376,65 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
   }
 
   // ════════════════════════════════════════
+  //  HAMBURGER MENU
+  // ════════════════════════════════════════
+
+  Widget _buildHamburgerButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [BoxShadow(blurRadius: 8, color: Colors.black26)],
+      ),
+      child: IconButton(
+        onPressed: _showCategoryMenu,
+        icon: const Icon(Icons.menu, color: Color(0xFF0B5D3B)),
+        tooltip: _t('التصنيفات', 'Categories', 'Kategoriler', 'Kategori'),
+      ),
+    );
+  }
+
+  void _showCategoryMenu() {
+    // Build inverted map: category → list of location names
+    final Map<String, List<String>> categoryPlaces = {};
+    for (final entry in _categoryMap.entries) {
+      categoryPlaces.putIfAbsent(entry.value, () => []).add(entry.key);
+    }
+    // Order categories logically
+    final orderedCategories = [
+      'مساجد', 'جبال', 'آبار', 'حصون وآطام', 'حرات', 'معارك', 'قصور', 'أسواق', 'أخرى',
+    ].where((c) => categoryPlaces.containsKey(c)).toList();
+    // Add any categories not in the ordered list
+    for (final c in categoryPlaces.keys) {
+      if (!orderedCategories.contains(c)) orderedCategories.add(c);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return _CategoryMenuSheet(
+          categoryPlaces: categoryPlaces,
+          orderedCategories: orderedCategories,
+          currentLang: _currentLang,
+          getCategoryLabel: _getCategoryLabel,
+          getDisplayName: _getDisplayName,
+          allPlaces: places,
+          onPlaceSelected: (place) {
+            Navigator.pop(ctx);
+            selectPlace(place);
+            _mapController.move(place.location, 16);
+          },
+        );
+      },
+    );
+  }
+
+  // ════════════════════════════════════════
   //  LANGUAGE TOGGLE — 4 أزرار
   // ════════════════════════════════════════
 
@@ -1426,8 +1485,11 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [_buildLangToggle()],
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildHamburgerButton(),
+              _buildLangToggle(),
+            ],
           ),
           const SizedBox(height: 8),
           Container(
@@ -1461,35 +1523,6 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
             ),
           ),
           buildSearchResults(),
-          const SizedBox(height: 10),
-          buildCategoryChips(),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(blurRadius: 12, color: Colors.black26),
-              ],
-            ),
-            child: Text(
-              _currentLang == 'ar'
-                  ? 'Nabawi Maps - ${filteredPlaces.length} موقع'
-                  : _currentLang == 'tr'
-                  ? 'Nabawi Maps — ${filteredPlaces.length} konum'
-                  : _currentLang == 'id'
-                  ? 'Nabawi Maps — ${filteredPlaces.length} lokasi'
-                  : 'Nabawi Maps — ${filteredPlaces.length} locations',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Color(0xFF0B5D3B),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -1626,5 +1659,202 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
               ),
       ),
     );
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  CATEGORY MENU SHEET — bottom sheet with categories
+// ══════════════════════════════════════════════════════
+
+class _CategoryMenuSheet extends StatefulWidget {
+  final Map<String, List<String>> categoryPlaces;
+  final List<String> orderedCategories;
+  final String currentLang;
+  final String Function(String) getCategoryLabel;
+  final String Function(Place) getDisplayName;
+  final List<Place> allPlaces;
+  final void Function(Place) onPlaceSelected;
+
+  const _CategoryMenuSheet({
+    required this.categoryPlaces,
+    required this.orderedCategories,
+    required this.currentLang,
+    required this.getCategoryLabel,
+    required this.getDisplayName,
+    required this.allPlaces,
+    required this.onPlaceSelected,
+  });
+
+  @override
+  State<_CategoryMenuSheet> createState() => _CategoryMenuSheetState();
+}
+
+class _CategoryMenuSheetState extends State<_CategoryMenuSheet> {
+  String? _expandedCategory;
+
+  @override
+  Widget build(BuildContext context) {
+    final isRtl = widget.currentLang == 'ar';
+    return Directionality(
+      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.92,
+        builder: (context, scrollController) {
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Text(
+                  widget.currentLang == 'ar'
+                      ? 'التصنيفات'
+                      : widget.currentLang == 'tr'
+                      ? 'Kategoriler'
+                      : widget.currentLang == 'id'
+                      ? 'Kategori'
+                      : 'Categories',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF0B5D3B),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: widget.orderedCategories.map((category) {
+                    final places = widget.categoryPlaces[category] ?? [];
+                    final isExpanded = _expandedCategory == category;
+                    final label = widget.getCategoryLabel(category);
+
+                    return Column(
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            setState(() {
+                              _expandedCategory = isExpanded ? null : category;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isExpanded
+                                  ? const Color(0xFFEAF4EF)
+                                  : Colors.white,
+                              border: const Border(
+                                bottom: BorderSide(color: Color(0xFFEEEEEE)),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _categoryIcon(category),
+                                  color: const Color(0xFF0B5D3B),
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    '$label  (${places.length})',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF0B5D3B),
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  isExpanded
+                                      ? Icons.keyboard_arrow_up
+                                      : Icons.keyboard_arrow_down,
+                                  color: const Color(0xFF0B5D3B),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (isExpanded)
+                          ...places.map((name) {
+                            final place = widget.allPlaces.firstWhere(
+                              (p) => p.name == name,
+                              orElse: () => Place(
+                                name: name,
+                                description: '',
+                                location: const LatLng(0, 0),
+                                category: category,
+                              ),
+                            );
+                            final displayName = place.location.latitude != 0
+                                ? widget.getDisplayName(place)
+                                : name;
+                            return InkWell(
+                              onTap: () {
+                                if (place.location.latitude != 0) {
+                                  widget.onPlaceSelected(place);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 52,
+                                  vertical: 11,
+                                ),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF8FCF9),
+                                  border: Border(
+                                    bottom: BorderSide(color: Color(0xFFEEEEEE)),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.location_on,
+                                      color: Color(0xFF0B5D3B),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        displayName,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF333333),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  IconData _categoryIcon(String category) {
+    switch (category) {
+      case 'مساجد': return Icons.mosque;
+      case 'جبال': return Icons.terrain;
+      case 'آبار': return Icons.water_drop;
+      case 'حصون وآطام': return Icons.fort;
+      case 'حرات': return Icons.local_fire_department;
+      case 'معارك': return Icons.shield;
+      case 'قصور': return Icons.castle;
+      case 'أسواق': return Icons.storefront;
+      default: return Icons.place;
+    }
   }
 }
