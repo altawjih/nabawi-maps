@@ -32,7 +32,10 @@ class NabawiMapsApp extends StatelessWidget {
 
 class Place {
   final String name;
-  final String description;
+  final String description; // Arabic description (default)
+  final String descEn;
+  final String descTr;
+  final String descId;
   final String category;
   final String? mapsUrl;
   final LatLng location;
@@ -41,6 +44,9 @@ class Place {
   Place({
     required this.name,
     required this.description,
+    this.descEn = '',
+    this.descTr = '',
+    this.descId = '',
     required this.category,
     required this.location,
     this.mapsUrl,
@@ -816,15 +822,16 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
 
   /// يعيد الوصف المعروض للموقع بحسب اللغة.
   String _getDesc(Place place) {
-    if (_currentLang == 'ar') return place.description;
-    final normalizedName = _normalize(place.name);
-    for (final entry in _descriptionMap.entries) {
-      if (_normalize(entry.key) == normalizedName) {
-        final desc = entry.value[_currentLang] ?? '';
-        return desc.isNotEmpty ? desc : place.description;
-      }
+    switch (_currentLang) {
+      case 'en':
+        return place.descEn.isNotEmpty ? place.descEn : place.description;
+      case 'tr':
+        return place.descTr.isNotEmpty ? place.descTr : place.description;
+      case 'id':
+        return place.descId.isNotEmpty ? place.descId : place.description;
+      default:
+        return place.description; // Arabic
     }
-    return place.description;
   }
 
   /// يعيد اسم التصنيف بحسب اللغة.
@@ -1001,12 +1008,28 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
 
         final name = nameElement.innerText.trim();
         final rawDescription = descriptionElement?.innerText.trim() ?? '';
-        final description = cleanDescription(rawDescription);
-        final mapsUrl = extractMapsUrl(rawDescription);
+
+        // Parse multilingual format: AR::...||EN::...||TR::...||ID::...||MAPS::...
+        String descAr = '', descEn = '', descTr = '', descId = '', mapsUrl = '';
+        if (rawDescription.contains('AR::') && rawDescription.contains('||EN::')) {
+          final parts2 = rawDescription.split('||');
+          for (final p in parts2) {
+            if (p.startsWith('AR::')) descAr = p.substring(4).trim();
+            else if (p.startsWith('EN::')) descEn = p.substring(4).trim();
+            else if (p.startsWith('TR::')) descTr = p.substring(4).trim();
+            else if (p.startsWith('ID::')) descId = p.substring(4).trim();
+            else if (p.startsWith('MAPS::')) mapsUrl = p.substring(6).trim();
+          }
+        } else {
+          // Legacy format fallback
+          descAr = cleanDescription(rawDescription);
+          mapsUrl = extractMapsUrl(rawDescription) ?? '';
+        }
+
         final styleUrl =
             placemark.findElements('styleUrl').firstOrNull?.innerText.trim() ??
             '';
-        final category = detectCategory(name, description, styleUrl);
+        final category = detectCategory(name, descAr, styleUrl);
 
         final coordinatesText = coordinatesElement.innerText.trim();
         final firstCoordinate = coordinatesText.split(RegExp(r'\s+')).first;
@@ -1029,9 +1052,12 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
         loadedPlaces.add(
           Place(
             name: name,
-            description: description,
+            description: descAr,
+            descEn: descEn,
+            descTr: descTr,
+            descId: descId,
             category: category,
-            mapsUrl: mapsUrl,
+            mapsUrl: mapsUrl.isEmpty ? null : mapsUrl,
             location: LatLng(latitude, longitude),
             nameEn: nameEn,
           ),
