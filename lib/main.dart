@@ -710,6 +710,17 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
   // ════════════════════════════════════════
 
   Future<void> openMaps(String url, {LatLng? location}) async {
+    // Build reliable URLs from coordinates when available
+    final double? lat = location?.latitude;
+    final double? lng = location?.longitude;
+
+    final googleUrl = (lat != null && lng != null)
+        ? 'https://www.google.com/maps/search/?api=1&query=$lat,$lng'
+        : url;
+    final appleUrl = (lat != null && lng != null)
+        ? 'maps://?q=$lat,$lng'
+        : 'https://maps.apple.com/?q=$lat,$lng';
+
     if (Platform.isIOS) {
       await showDialog(
         context: context,
@@ -719,9 +730,6 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
             TextButton(
               onPressed: () async {
                 Navigator.pop(ctx);
-                                  final appleUrl = location != null
-                    ? 'maps://?q=${location.latitude},${location.longitude}'
-                    : url;
                 await launchUrl(
                   Uri.parse(appleUrl),
                   mode: LaunchMode.externalApplication,
@@ -733,7 +741,7 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
               onPressed: () async {
                 Navigator.pop(ctx);
                 await launchUrl(
-                  Uri.parse(url),
+                  Uri.parse(googleUrl),
                   mode: LaunchMode.externalApplication,
                 );
               },
@@ -743,7 +751,8 @@ class _NabawiMapsHomeState extends State<NabawiMapsHome>
         ),
       );
     } else {
-      final uri = Uri.parse(url);
+      // Android: open Google Maps directly with coordinates
+      final uri = Uri.parse(googleUrl);
       final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!opened && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
